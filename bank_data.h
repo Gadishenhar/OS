@@ -7,24 +7,28 @@ using namespace std;
 
 
 class Account {
+	int id;
+	int remainder;
+
 	public:
 
 		/**
 		 * @brief create an Account
 		 */
-		Account();
+		Account(int id_, int remainder_);
 		/**
 		 * @brief destroy an Account
 		 */
 		~Account();
 
+		bool operator==(const Account& lhs, const Account& rhs);
+
 };
 
 class Bank {
 
-	int bank_commision;
 	Account bank_account;
-	vector <Account> my_vec;
+	vector <Account> accounts;
 
 	public:
 
@@ -37,6 +41,16 @@ class Bank {
 		 * @brief destroy the bank
 		 */
 		~Bank();
+
+		/**
+		 * @brief take commision from all accounts of the bank
+		 */
+		void take_commision(void);
+
+		/**
+		 * @brief add account to the bank
+		 */
+		void add_account(int id, int remainder, int atm_id);
 
 
 
