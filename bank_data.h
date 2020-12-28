@@ -9,13 +9,14 @@ using namespace std;
 class Account {
 	int id;
 	int remainder;
+	int password
 
 	public:
 
 		/**
 		 * @brief create an Account
 		 */
-		Account(int id_, int remainder_);
+		Account(int id_, int remainder_, int password_);
 		/**
 		 * @brief destroy an Account
 		 */
@@ -50,7 +51,7 @@ class Bank {
 		/**
 		 * @brief add account to the bank
 		 */
-		void add_account(int id, int remainder, int atm_id);
+		void add_account(int id, int remainder, int password, int atm_id);
 
 
 

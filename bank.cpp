@@ -56,8 +56,12 @@ int main (int argc, char *argv[]) {
     for (int i=0; i < num_atms; i++) {
             pthread_join(atm_thr[i], NULL);
         }
-    pthread_join(comm_thr[i], NULL);
-    pthread_join(prt_thr[i], NULL);
-    }
+    pthread_join(comm_thr, NULL);
+    pthread_join(prt_thr, NULL);
 
+    log_file.close();
+    pthread_mutex_destroy(&log_file_mutex);
+	pthread_mutex_destroy(&atm_cnt);
+    delete bank;
+    return 0;
 }

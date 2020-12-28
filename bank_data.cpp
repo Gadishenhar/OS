@@ -1,10 +1,11 @@
 #include <bank_data.h>
 #include <algorithm>
 
+
 using namespace std;
 
 //===================== Account ===================
-Account::Account(int id_, int remainder_): id(id_), remainder(remainder_) {
+Account::Account(int id_, int remainder_, int password_): id(id_), remainder(remainder_), password(password_) {
 
 }
 
@@ -30,12 +31,13 @@ void Bank::take_commision() {
 
 }
 
-void Bank::add_account(int id, int remainder, int atm_id) {
+void Bank::add_account(int id, int remainder, int atm_id, int password) {
 
-	if(find(accounts.begin(), accounts.end(), id) != accounts.end()) {
+	if (find(accounts.begin(), accounts.end(), id) != accounts.end()) {
 		accounts.push_back(Account(id, remainder));
+
 	} else {
-		cerr << "Error << "  << atm_id <<
+		log_file << "Error << "  << atm_id << ": Your  transaction failed - account with the same id exists" << endl;
 	}
 
 }
