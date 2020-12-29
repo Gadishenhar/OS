@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 #include <string.h>
+#include "atm.h"
+
 using namespace std;
 
 #define CHECK_RC(rc, ...) if (rc) {printf(__VA_ARGS__); goto done;}
@@ -58,7 +60,7 @@ static int check_input(string cmd, int num_arg, char* args[]) {
 }
 
 
-int atm ()
+void * atm (void*)
 {
 	string cmd;
 	char* args[MAX_ARGS];
@@ -83,8 +85,14 @@ int atm ()
 		}
 
 		rc = check_input(cmd, num_arg, args);
-		if (cmd == "O") {
 
+		if (cmd == "O") {
+			int id = atoi(args[0]);
+			int password = atoi(args[1]);
+			int amount = atoi(args[2]);
+			// TODO: pass atm_id from bank.cpp properly
+			//TODO: add mutex protection here or inside
+			bank->add_account(id, amount, password, atm_id);
 		} else if(cmd == "D") {
 
 		} else if (cmd == "W") {
@@ -103,8 +111,7 @@ done:
 		delete[] linesize;
 	}
 
+
 	return 0;
-
-
 }
 
