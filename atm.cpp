@@ -93,15 +93,55 @@ void * atm (void*)
 			// TODO: pass atm_id from bank.cpp properly
 			//TODO: add mutex protection here or inside
 			bank->add_account(id, amount, password, atm_id);
-		} else if(cmd == "D") {
+		}
+		else if (cmd == "D") {
+			int id = atoi(args[0]);
+			int password = atoi(args[1]);
+			int amount = atoi(args[2]);
+			Account curr_account = bank->get_account(id, atm_id);
+			if (curr_account != nullptr) {
+				if (bank->check_account_pass(id, password, atm_id) {
+					bank->deposit(id, amount, atm_id);
+				}
+			}
+		}
 
 		} else if (cmd == "W") {
 
 		} else if (cmd == "B") {
-
+			int id = atoi(args[0]);
+			int password = atoi(args[1]);
+			Account curr_account = bank->get_account(id, atm_id);
+			if (curr_account != nullptr) {
+				if (bank->check_account_pass(id, password, atm_id) {
+					bank->check_account_balance(id, atm_id);
+				}
+			}
+		}
 		} else if (cmd == "Q") {
+			int id = atoi(args[0]);
+			int password = atoi(args[1]);
+			Account curr_account = bank->get_account(id, atm_id);
+			if (curr_account != nullptr) {
+				if (bank->check_account_pass(id, password, atm_id) {
+					bank->remove_account(id, atm_id);
 
-		} else if (cmd == "T") {
+			}
+			}
+			else if (cmd == "T") {
+				int id = atoi(args[0]);
+					int password = atoi(args[1]);
+					int target_id = atoi(args[2]);
+					int amount = atoi(args[3]);
+					Account curr_account = bank->get_account(id, atm_id);
+					Account target_account = bank->get_account(id, atm_id);
+				if (curr_account != nullptr && target_account != nullptr) {
+					if (bank->check_account_pass(id, password, atm_id) {
+						bank->withdrawal(id, atm_id);
+							bank->deposit(target_id, amount, atm_id);
+					}
+				}
+			}
 
 		} else {
 

@@ -148,7 +148,45 @@ void Bank::withdrawal(int id, int password, int amount, int atm_id) {
 	log_file << atm_id << "account " << id <<" new balance is " << curr_balance << "after "<< amount << " $ was withdrew" << endl;
 }
 
+void Bank::get_account(int id, int atm_id) {
+	vector<Account>::iterator it = find_if(accounts.begin(), accounts.end(), [](const Account& account) { return account.get_id() == id; });
+	if (it == accounts.end()) {
+		log_file << "Error << " << atm_id << ": Your  transaction failed - account id " << id << " does not exist" << endl; // TODO: is it to log or stdout
+		return nullptr;
+	}
+	return it;
+}
 
+void Bank::remove_account(int id, int atm_id) {
+	Account curr_account = bank->get_account(id, atm_id);
+	if (it != nullptr) {
+		int curr_balance = *curr_account->get_remainder();
+		accounts.erase(curr_account);
+		logfile << "Error " << atm_id << ": Account " << id << " is now closed. Balance was " << curr_balance << endl;
+	}
+}
 
+void Bank::deposit(int id, int amount, int atm_id) {
+	Account curr_account = bank->get_account(id, atm_id);
+	curr_account->add_to_balance(amount);
+	int curr_balance = *curr_account->get_remainder();
 
+	log_file << atm_id << ": Account " << id << " new balance is " << curr_balance << " after " << amount << " $ was deposited" << endl;
+}
 
+void Bank::check_account_balance(int id, int atm_id) {
+	Account curr_account = bank->get_account(id, atm_id);
+	int curr_balance = *curr_account->get_remainder();
+	log_file << atm_id << ": Account " << id << " balance is " << curr_balance << endl;
+}
+
+void Bank::check_account_pass(int id, int password, int atm_id) {
+	Account curr_account = bank->get_account(id, atm_id);
+	if !(*curr_account->check_password(password)) {
+		log_file << "Error << " << atm_id << ": Your  transaction failed - password for account id " << id << " is incorrect" << endl;
+		return false;
+	}
+	else {
+		return true;
+	}
+}
