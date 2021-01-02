@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <unistd.h>
 #include <stdlib.h>
+#include <pthread.h>
+
 
 using namespace std;
 
@@ -11,7 +13,9 @@ using namespace std;
 //===================== Account ===================
 
 Account::Account(int id_, int remainder_, int password_): id(id_), remainder(remainder_), password(password_) {
-
+	sem_init(&s_read_acc , 0, 1);
+	sem_init(&s_write_acc , 0, 1);
+	readers_acc = 0;
 }
 
 Account::~Account() {
@@ -20,29 +24,26 @@ Account::~Account() {
 
 int Account::withdrawal(int amount) {
 	if (amount > remainder) {
-		return 1;
+		return -1;
 	} else {
 		remainder -= amount;
 		return 0;
 	}
 }
 
-int Account::take_commision(int commision_perc) {
 
-	int bank_profit = (commision_perc * remainder) / 100;
-
-	remainder -= bank_profit;
-
-	return bank_profit;
-}
 
 void Account::add_to_balance(int amount) {
 	remainder += amount;
 }
 
 
-bool Account::check_password(int pass) {
-	return (pass == password);
+int Account::check_password(int pass) {
+	if(pass == password) {
+		return 0;
+	} else {
+		return -1;
+	}
 }
  int Account::get_id() const {
 	return id;
@@ -60,7 +61,7 @@ void Account::print_account() const {
 	cout << "Account " << id <<": Balance - " << remainder << " $ , Account Password - " << password << endl;
 }
 
-bool Account::operator==(const Account& lhs, const Account& rhs) {
+bool Account::operator==(const Account& rhs) {
 	return (id == rhs.id);
 }
 
@@ -68,125 +69,345 @@ bool Account::operator< (const Account &other) const {
 	return (id < other.id);
 }
 
+void Account::Access_account(bool is_write) {
+	if (is_write) {
+		sem_wait(&s_write_acc);
+	}
+	else {
+		sem_wait(&s_read_acc);
+		readers_acc++;
+		if (readers_acc==1)
+			sem_wait(&s_write_acc);
+		sem_post(&s_read_acc);
+	}
+}
+
+void Account::Release_account(bool is_write) {
+	if (is_write) {
+		sem_post(&s_write_acc);
+	}
+	else {
+		sem_wait(&s_read_acc);
+		readers_acc--;
+		if (!readers_acc)
+			sem_post(&s_read_acc);
+		sem_post(&s_read_acc);
+	}
+}
 
 
 //================ Bank ====================
 
 Bank::Bank(): log_file("log.txt"), bank_account(0,0,0)  {
-
+	sem_init(&s_readers , 0, 1);
+	sem_init(&s_writers , 0, 1);
+	pthread_mutex_init(&m_log, NULL);
+	readers = 0;
 }
 
 Bank::~Bank() {
-
+	sem_destroy(&s_readers);
+	sem_destroy(&s_writers);
+	pthread_mutex_destroy(&m_log);
 }
 
-int Bank::get_balance() {
-	return bank_account.get_remainder();
-}
-
-
+// DONE: locks
 void Bank::take_commision() {
 	int com = rand() % 3 + 2; // 2 or 3 or 4
-	while(true) {
-		sleep(3);
-		for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
-			int profit  = *it->take_commision(com);
-			int password = *it->get_password();
-			int id = *it->get_id();
-			bank_account.add_to_balance(profit);
 
-			log_file << "Bank comissions of " << com << " % were charged, the bank gained " << profit <<" $ from account " << id << endl;
-		}
+	Access_account_vec(false);
+
+	for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
+		*it->Access_account(true);
+		int id = *it->get_id();
+		int remainder = *it->get_remainder();
+		int bank_profit = double(com * remainder) / 100;
+		*it->withdrawal(bank_profit);
+		*it->Release_account(true);
+
+		bank_account.Access_account(true);
+		bank_account.add_to_balance(bank_profit);
+		bank_account.Release_account(true);
+
+		Access_log_file();
+		log_file << "Bank comissions of " << com << " % were charged, the bank gained " << bank_profit <<" $ from account " << id << endl;
+		Release_log_file();
 	}
+
+	Release_account_vec(false);
 }
 
+// DONE: locks
 void Bank::print_accounts() {
-	while(true) {
-		sleep(0.5);
-		sort(accounts.begin(), accounts.end());
 
-		cout << "Current Bank Status" << endl;
+	Access_account_vec(false);
 
-		for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
-			*it->print_account();
-		}
-		int balance = get_balance();
-		cout << "The Bank has " << balance << "$" << endl;
+	sort(accounts.begin(), accounts.end());
+
+	printf("\033[2J");
+	printf("\033[1;1H");
+	cout << "Current Bank Status" << endl;
+
+	for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
+		*it->Access_account(false);
+		*it->print_account();
+		*it->Release_account(false);
 
 	}
+
+	Release_account_vec(false);
+
+	bank_account.Access_account(false);
+	int balance = bank_account.get_remainder();
+	bank_account.Release_account(false);
+
+	cout << "The Bank has " << balance << "$" << endl;
+
+
 }
 
-//TODO:: should return 1 on fail?
+// DONE: locks
 void Bank::add_account(int id, int remainder, int atm_id, int password) {
 
+	Access_account_vec(true);
+	sleep(1);
 	if (find(accounts.begin(), accounts.end(), id) != accounts.end()) {
 		accounts.push_back(Account(id, remainder, password));
+		Access_log_file();
 		log_file << atm_id << ": New account id is " << id << " with password " << password << " and initial balance " << remainder << endl;
-
+		Release_log_file();
 	} else {
+		Access_log_file();
 		log_file << "Error << "  << atm_id << ": Your  transaction failed - account with the same id exists" << endl;
+		Release_log_file();
 	}
+
+	Release_account_vec(true);
 }
 
-//TODO:: should return 1 on fail?
-void Bank::withdrawal(int id, int password, int amount, int atm_id) {
-	vector<Account>:: iterator it = find_if(accounts.begin(), accounts.end(), [](const Account& account) { return account.get_id() == id; });
+// DONE: locks
+int Bank::withdrawal(int id, int password, int amount, int atm_id) {
 
-	if (it == accounts.end()) {
-		log_file << "Error << "  << atm_id << ": Your  transaction failed - account id " << id <<" does not exist" << endl; // TODO: is it to log or stdout
+	int rc = 0;
+	Account acc;
+
+	Access_account_vec(false);
+	rc = get_account(id, atm_id, &acc);
+	if(rc) {
+		sleep(1);
+		Release_account_vec(false);
+		return -1;
 	}
-	if (*it->check_password(password)) {
+	acc.Access_account(true);
+	sleep(1);
+	rc = acc.check_password(password);
+	if (rc) {
+		Access_log_file();
 		log_file << "Error << "  << atm_id << ": Your  transaction failed - password for account id " << id <<" is incorrect" << endl;
-		return;
+		Release_log_file();
+		acc.Release_account(true);
+		Release_account_vec(false);
+		return -1;
 	}
-	if (*it->withdrawal(amount)) {
-		log_file << "Error << "  << atm_id << ": Your  transaction failed - account id " << id <<" balance is lower than " << amount << endl;
-		return;
-	}
-	int curr_balance = *it->get_remainder();
 
+	rc = acc.withdrawal(amount);
+	acc.Release_account(true);
+	if (rc) {
+		Access_log_file();
+		log_file << "Error << "  << atm_id << ": Your  transaction failed - account id " << id <<" balance is lower than " << amount << endl;
+		Release_log_file();
+		acc.Release_account(true);
+		Release_account_vec(false);
+		return -1;
+	}
+	int curr_balance = acc.get_remainder();
+
+	acc.Release_account(true);
+	Release_account_vec(false);
+
+	Access_log_file();
 	log_file << atm_id << "account " << id <<" new balance is " << curr_balance << "after "<< amount << " $ was withdrew" << endl;
+	Release_log_file();
+
+	return 0;
 }
 
-void Bank::get_account(int id, int atm_id) {
+// DONE: locks
+int Bank::get_account(int id, int atm_id, Account* acc) {
+	//No use in access_account_vec on purpose - we will do it in the envlope functions
 	vector<Account>::iterator it = find_if(accounts.begin(), accounts.end(), [](const Account& account) { return account.get_id() == id; });
 	if (it == accounts.end()) {
+		Access_log_file();
 		log_file << "Error << " << atm_id << ": Your  transaction failed - account id " << id << " does not exist" << endl; // TODO: is it to log or stdout
-		return nullptr;
+		Release_log_file();
+		*acc = nullptr;
+		return -1;
 	}
-	return it;
+	*acc = *it;
+	return 0;
 }
 
 void Bank::remove_account(int id, int atm_id) {
-	Account curr_account = bank->get_account(id, atm_id);
-	if (it != nullptr) {
-		int curr_balance = *curr_account->get_remainder();
-		accounts.erase(curr_account);
-		logfile << "Error " << atm_id << ": Account " << id << " is now closed. Balance was " << curr_balance << endl;
+	Access_account_vec(true);
+	vector<Account>::iterator it = find_if(accounts.begin(), accounts.end(), [](const Account& account) { return account.get_id() == id; });
+	if (it == accounts.end()) {
+		sleep(1);
+		Access_log_file();
+		log_file << "Error << " << atm_id << ": Your  transaction failed - account id " << id << " does not exist" << endl;
+		Release_log_file();
+		Release_account_vec(true);
+		return;
 	}
+	*it->Access_account(false);
+	sleep(1);
+	int curr_balance = *it->get_remainder();
+	*it->Release_account(false);
+	accounts.erase(it);
+	Release_account_vec(true);
 }
 
-void Bank::deposit(int id, int amount, int atm_id) {
-	Account curr_account = bank->get_account(id, atm_id);
-	curr_account->add_to_balance(amount);
-	int curr_balance = *curr_account->get_remainder();
+void Bank::get_account_balance(int id, int password, int atm_id) {
 
-	log_file << atm_id << ": Account " << id << " new balance is " << curr_balance << " after " << amount << " $ was deposited" << endl;
-}
+	Account acc;
+	Access_account_vec(false);
+	int rc = get_account(id, atm_id, &acc);
+	if (rc) {
+		sleep(1);
+		Release_account_vec(false);
+		return;
+	}
+	acc.Access_account(false);
+	rc = acc.check_password(password);
+	sleep(1);
+	if (rc) {
+		acc.Release_account(false);
+		Release_account_vec(false);
+		Access_log_file();
+		log_file << "Error << "  << atm_id << ": Your  transaction failed - password for account id " << id <<" is incorrect" << endl;
+		Release_log_file();
+		return;
+	}
+	int curr_balance = acc.get_remainder();
 
-void Bank::check_account_balance(int id, int atm_id) {
-	Account curr_account = bank->get_account(id, atm_id);
-	int curr_balance = *curr_account->get_remainder();
+	acc.Release_account(false);
+	Release_account_vec(false);
+
+	Access_log_file();
 	log_file << atm_id << ": Account " << id << " balance is " << curr_balance << endl;
+	Release_log_file();
 }
 
-void Bank::check_account_pass(int id, int password, int atm_id) {
-	Account curr_account = bank->get_account(id, atm_id);
-	if !(*curr_account->check_password(password)) {
-		log_file << "Error << " << atm_id << ": Your  transaction failed - password for account id " << id << " is incorrect" << endl;
-		return false;
+// DONE:check if we need to write to log only if the first id doesn't exist or both of them : we need to print once only
+//DONE: locks
+void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id) {
+	Account src_account;
+	Account dst_account;
+
+	Access_account_vec(false);
+	int rc_src = get_account(src_id, atm_id, &src_account);
+	if (rc_src) {
+		sleep(1);
+		Release_account_vec(false);
+		return;
+	}
+	int rc_dst = get_account(dst_id, atm_id, &dst_account);
+	if (rc_dst) {
+		sleep(1);
+		Release_account_vec(false);
+		return;
+	}
+	src_account.Access_account(true);
+	rc_src = withdrawal(src_id, password, amount, atm_id);
+	if (rc_src) {
+		sleep(1);
+		src_account.Release_account(true);
+		Release_account_vec(false);
+		return;
+	}
+	dst_account.Access_account(true);
+	sleep(1);
+	dst_account.add_to_balance(amount);
+	int src_balance = src_account.get_remainder();
+	int dst_balance = dst_account.get_remainder();
+
+	dst_account.Release_account(true);
+	src_account.Release_account(true);
+	Release_account_vec(false);
+
+	Access_log_file();
+	log_file << atm_id << ": Transfer " << amount << " from account " << src_id << " to account " << dst_id <<
+			" new account balance is " << src_balance << " new target account balance is " << dst_account << endl;
+	Release_log_file();
+
+}
+
+// DONE: locks
+void Bank::deposit(int id, int password, int amount, int atm_id) {
+	Account acc;
+	int rc = get_account(id, atm_id, &acc);
+	if (rc < 0 ) {
+		return;
+	}
+	acc.Access_account(false);
+	rc = acc.check_password(password);
+	acc.Release_account(false);
+	if (rc) {
+		Access_log_file();
+		log_file << "Error << "  << atm_id << ": Your  transaction failed - password for account id " << id <<" is incorrect" << endl;
+		Release_log_file();
+		return;
+	}
+
+	acc.Access_account(true);
+	int curr_balance = acc.get_remainder();
+	acc.add_to_balance(amount);
+	acc.Release_account(true);
+
+	Access_log_file();
+	log_file << atm_id << ": Account " << id << " new balance is " << curr_balance << " after " << amount << " $ was deposited" << endl;
+	Release_log_file();
+
+}
+
+void Bank::Access_account_vec(bool is_write) {
+	if (is_write) {
+		sem_wait(&s_writers);
 	}
 	else {
-		return true;
+		sem_wait(&s_readers);
+		readers++;
+		if (readers==1)
+			sem_wait(&s_writers);
+		sem_post(&s_readers);
+	}
+}
+
+void Bank::Release_account_vec(bool is_write) {
+	if (is_write) {
+		sem_post(&s_writers);
+	}
+	else {
+		sem_wait(&s_readers);
+		readers--;
+		if (!readers)
+			sem_post(&s_writers);
+		sem_post(&s_readers);
+	}
+}
+
+void Bank::Access_log_file() {
+	int rc = pthread_mutex_lock(&m_log);
+	if (rc) {
+		cerr << "error in m_log lock " << rc << endl;
+		exit(-1);
+	}
+}
+
+void Bank::Release_log_file(){
+	int rc = pthread_mutex_unlock(&m_log);
+
+ 	if (rc) {
+		cerr << "error in m_log unlock " << rc << endl;
+		exit(-1);
 	}
 }

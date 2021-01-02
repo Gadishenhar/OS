@@ -11,9 +11,10 @@ Bank: $(OBJS)
 # Creating the object files
 bank.o: bank.cpp atm.h bank_data.h 
 atm.o: atm.cpp atm.h bank_data.h
-bank_data.o : bank_data.cpp bank_data.h
+bank_data.o : bank_data.cpp bank_data.h 
 # Cleaning old files before new make
 clean:
-	$(RM) $(TARGET) *.o *~ "#"* core.*
+	$(RM) $(TARGET) $(OBJS) *.o *~ "#"* core.* *.gch
+
 	
 

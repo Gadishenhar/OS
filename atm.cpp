@@ -1,7 +1,10 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <string.h>
 #include "atm.h"
+#include "bank_data.h"
+#include <pthread.h>
 
 using namespace std;
 
@@ -60,14 +63,19 @@ static int check_input(string cmd, int num_arg, char* args[]) {
 }
 
 
-void * atm (void*)
+void* atm (void* ctx)
 {
 	string cmd;
 	char* args[MAX_ARGS];
 	char* linesize;
 	int rc = 0;
 
-	while (getline(cin, cmd)) {
+
+	atm_ctx_t ctx_atm = (atm_ctx_t)ctx;
+	ifstream atm_file(ctx_atm.filename);
+	int atm_id = ctx_atm.atm_id;
+
+	while (getline(atm_file, cmd)) {
 		const char* delimiters = " \t\n";
 		int i = 0, num_arg = 0;
 
@@ -85,73 +93,34 @@ void * atm (void*)
 		}
 
 		rc = check_input(cmd, num_arg, args);
+		int id = atoi(args[0]);
+		int password = atoi(args[1]);
 
 		if (cmd == "O") {
-			int id = atoi(args[0]);
-			int password = atoi(args[1]);
 			int amount = atoi(args[2]);
-			// TODO: pass atm_id from bank.cpp properly
-			//TODO: add mutex protection here or inside
-			bank->add_account(id, amount, password, atm_id);
-		}
-		else if (cmd == "D") {
-			int id = atoi(args[0]);
-			int password = atoi(args[1]);
+			bank.add_account(id, amount, password, atm_id)
+		} else if (cmd == "D") {
 			int amount = atoi(args[2]);
-			Account curr_account = bank->get_account(id, atm_id);
-			if (curr_account != nullptr) {
-				if (bank->check_account_pass(id, password, atm_id) {
-					bank->deposit(id, amount, atm_id);
-				}
-			}
-		}
-
+			bank.deposit(id, password, amount, atm_id);
 		} else if (cmd == "W") {
-
+			int amount = atoi(args[2]);
+			bank.withdrawal(id, password, amount, atm_id);
 		} else if (cmd == "B") {
-			int id = atoi(args[0]);
-			int password = atoi(args[1]);
-			Account curr_account = bank->get_account(id, atm_id);
-			if (curr_account != nullptr) {
-				if (bank->check_account_pass(id, password, atm_id) {
-					bank->check_account_balance(id, atm_id);
-				}
-			}
-		}
+			bank.check_account_balance(id, password, atm_id);
 		} else if (cmd == "Q") {
-			int id = atoi(args[0]);
-			int password = atoi(args[1]);
-			Account curr_account = bank->get_account(id, atm_id);
-			if (curr_account != nullptr) {
-				if (bank->check_account_pass(id, password, atm_id) {
-					bank->remove_account(id, atm_id);
-
-			}
-			}
-			else if (cmd == "T") {
-				int id = atoi(args[0]);
-					int password = atoi(args[1]);
-					int target_id = atoi(args[2]);
-					int amount = atoi(args[3]);
-					Account curr_account = bank->get_account(id, atm_id);
-					Account target_account = bank->get_account(id, atm_id);
-				if (curr_account != nullptr && target_account != nullptr) {
-					if (bank->check_account_pass(id, password, atm_id) {
-						bank->withdrawal(id, atm_id);
-							bank->deposit(target_id, amount, atm_id);
-					}
-				}
-			}
-
+			bank.remove_account(id, atm_id);
+		} else if (cmd == "T") {
+			int dst_id = atoi(args[2]);
+			int amount = atoi(args[3]);
+			bank.transfer(id, dst_id, password, amount, atm_id);
 		} else {
-
 			cerr << "Invalid operation" << endl;
 		}
-done:
-		delete[] linesize;
 	}
 
+done:
+		delete[] linesize;
+		pthread_exit(NULL);
 
-	return 0;
 }
 
