@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-
+#define DEBUG(...)  printf("Line %d Function %s:\n", __LINE__, __FUNCTION__ ); printf(__VA_ARGS__);
 using namespace std;
 
 //TODO:: add log_access function that wrap the mutex implementation and specific msg
@@ -169,23 +169,22 @@ void Bank::add_account(int id, int remainder, int atm_id, int password) {
 	vector<Account>::iterator it;
 	Access_account_vec(true);
 	sleep(1);
+
 	for (it = accounts.begin(); it != accounts.end(); ++it) {
 		if (it->get_id() == id) {
-			break;
+			Access_log_file();
+			log_file << "Error << "  << atm_id << ": Your  transaction failed - account with the same id exists" << endl;
+			Release_log_file();
+			Release_account_vec(true);
+			return;
 		}
 	}
-	if (it != accounts.end()) {
-		accounts.push_back(Account(id, remainder, password));
-		Access_log_file();
-		log_file << atm_id << ": New account id is " << id << " with password " << password << " and initial balance " << remainder << endl;
-		Release_log_file();
-	} else {
-		Access_log_file();
-		log_file << "Error << "  << atm_id << ": Your  transaction failed - account with the same id exists" << endl;
-		Release_log_file();
-	}
-
+	accounts.push_back(Account(id, remainder, password));
+	Access_log_file();
+	log_file << atm_id << ": New account id is " << id << " with password " << password << " and initial balance " << remainder << endl;
+	Release_log_file();
 	Release_account_vec(true);
+
 }
 
 // DONE: locks
@@ -249,8 +248,6 @@ int Bank::get_account(int id, int atm_id, Account& acc) {
 	Release_log_file();
 	return -1;
 
-
-	return 0;
 }
 
 void Bank::remove_account(int id, int atm_id) {
