@@ -5,6 +5,7 @@
 #include "atm.h"
 #include "bank_data.h"
 #include <pthread.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -79,8 +80,7 @@ void* atm (void* ctx)
 		const char* delimiters = " \t\n";
 		int i = 0, num_arg = 0;
 
-		printf("cmd is :%s\n", cmd.c_str());
-		linesize = new char [cmd.length() + 1];
+		linesize = new char[cmd.length() + 1];
 		strcpy(linesize, cmd.c_str());
 		cmd = strtok(linesize, delimiters);
 		if (linesize == NULL)
@@ -92,10 +92,7 @@ void* atm (void* ctx)
 				num_arg++;
 			}
 		}
-		printf("OP is :%s\n", cmd.c_str());
-		printf("num args is :%d\n",num_arg);
-		printf("args[0] is :%s\n",args[0]);
-		printf("args[1] is :%s\n",args[1]);
+
 		rc = check_input(cmd, num_arg, args);
 		CHECK_RC(rc);
 
@@ -104,7 +101,7 @@ void* atm (void* ctx)
 
 		if (cmd == "O") {
 			int amount = atoi(args[2]);
-			bank->add_account(id, amount, password, atm_id);
+			bank->add_account(id, amount, atm_id, password);
 		} else if (cmd == "D") {
 			int amount = atoi(args[2]);
 			bank->deposit(id, password, amount, atm_id);
@@ -122,6 +119,8 @@ void* atm (void* ctx)
 		} else {
 			cerr << "Invalid operation" << endl;
 		}
+
+		usleep(100 * 1000);
 	}
 
 done:

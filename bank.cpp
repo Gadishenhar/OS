@@ -68,15 +68,7 @@ int main (int argc, char *argv[]) {
     atm_ctx_t *atm_ctx = new atm_ctx_t[num_atms];
     int rc = 0;
 
-    //creating threads for the atms:
-    for (int i = 0; i < num_atms; i++) {
-    	atm_ctx[i].atm_id = i;
-    	atm_ctx[i].filename = argv[i + 2];
-        if ( (rc = pthread_create(&atm_thr[i], NULL, atm, (void*)&atm_ctx[i] ))) {  //i+2 because we want the arguments of the input
-            cerr << "error: pthread_create, rc: " << rc << endl;
-            exit(-1);
-        }
-    }
+
     //create a thread to take the comission for the bank:
     pthread_t comm_thr;
     if ( (rc = pthread_create(&comm_thr, NULL, take_commision, NULL) ) ) {
@@ -91,20 +83,36 @@ int main (int argc, char *argv[]) {
         exit(-1);
     }
 
-    pthread_join(prt_thr, NULL);
+    //creating threads for the atms:
+    for (int i = 0; i < num_atms; i++) {
+    	atm_ctx[i].atm_id = i;
+    	atm_ctx[i].filename = argv[i + 2];
+        if ( (rc = pthread_create(&atm_thr[i], NULL, atm, (void*)&atm_ctx[i] ))) {  //i+2 because we want the arguments of the input
+            cerr << "error: pthread_create, rc: " << rc << endl;
+            exit(-1);
+        }
+    }
 
-    pthread_join(comm_thr, NULL);
     //Joining all the threads we have created
     for (int i=0; i < num_atms; i++) {
     	pthread_join(atm_thr[i], NULL);
+
     }
 
 	pthread_mutex_lock(&g_exit_mutex);
 	g_exit_prog = true;
 	pthread_mutex_unlock(&g_exit_mutex);
 
+
+    pthread_join(comm_thr, NULL);
+	pthread_join(prt_thr, NULL);
+
+
+    pthread_mutex_destroy(&g_exit_mutex);
+
     delete[] atm_ctx;
     delete[] atm_thr;
-    delete[] bank;
-    return 0;
+    delete bank;
+
+    exit(0);
 }
