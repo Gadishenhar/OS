@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define CHECK_RC(rc, ...) if (rc) {printf(__VA_ARGS__); goto done;}
+#define CHECK_RC(rc) if (rc) { goto done;}
 
 #define MAX_ARGS 5
 
@@ -71,7 +71,7 @@ void* atm (void* ctx)
 	int rc = 0;
 
 
-	atm_ctx_t ctx_atm = (atm_ctx_t)ctx;
+	atm_ctx_t ctx_atm = *((atm_ctx_t*)ctx);
 	ifstream atm_file(ctx_atm.filename);
 	int atm_id = ctx_atm.atm_id;
 
@@ -93,26 +93,28 @@ void* atm (void* ctx)
 		}
 
 		rc = check_input(cmd, num_arg, args);
+		CHECK_RC(rc);
+
 		int id = atoi(args[0]);
 		int password = atoi(args[1]);
 
 		if (cmd == "O") {
 			int amount = atoi(args[2]);
-			bank.add_account(id, amount, password, atm_id)
+			bank->add_account(id, amount, password, atm_id);
 		} else if (cmd == "D") {
 			int amount = atoi(args[2]);
-			bank.deposit(id, password, amount, atm_id);
+			bank->deposit(id, password, amount, atm_id);
 		} else if (cmd == "W") {
 			int amount = atoi(args[2]);
-			bank.withdrawal(id, password, amount, atm_id);
+			bank->withdrawal(id, password, amount, atm_id);
 		} else if (cmd == "B") {
-			bank.check_account_balance(id, password, atm_id);
+			bank->get_account_balance(id, password, atm_id);
 		} else if (cmd == "Q") {
-			bank.remove_account(id, atm_id);
+			bank->remove_account(id, atm_id);
 		} else if (cmd == "T") {
 			int dst_id = atoi(args[2]);
 			int amount = atoi(args[3]);
-			bank.transfer(id, dst_id, password, amount, atm_id);
+			bank->transfer(id, dst_id, password, amount, atm_id);
 		} else {
 			cerr << "Invalid operation" << endl;
 		}

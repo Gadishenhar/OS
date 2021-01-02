@@ -4,7 +4,8 @@
 
 void* atm (void *);
 
-extern Bank bank;
+extern Bank* bank;
+
 
 typedef struct atm_ctx {
 	int atm_id;

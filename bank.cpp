@@ -15,7 +15,7 @@ pthread_mutex_t log_file_mutex;
 pthread_mutex_t atm_cnt;
 ofstream log_file;
 
-Bank bank;
+Bank* bank;
 
 bool g_exit_prog = false;
 
@@ -23,7 +23,7 @@ void* take_commision(void* ctx) {
 
 	bool exit_prog = false;
 	while (!exit_prog) {
-		bank.take_commision();
+		bank->take_commision();
 		sleep(3);
 
 		exit_prog = g_exit_prog;
@@ -34,7 +34,7 @@ void* take_commision(void* ctx) {
 void* print_accounts(void* ctx) {
 	bool exit_prog = false;
 	while (!exit_prog) {
-		bank.print_accounts();
+		bank->print_accounts();
 		usleep(500 * 1000);
 
 		exit_prog = g_exit_prog;
@@ -49,7 +49,7 @@ int main (int argc, char *argv[]) {
     pthread_mutex_init(&log_file_mutex, NULL);
 	log_file.open("log.txt");
 
-	bank  = new Bank();
+	bank = new Bank();
 
     //Initialize the counter of the ATMs and initialize a mutex for it
 	pthread_mutex_init(&atm_cnt,NULL);
@@ -95,5 +95,6 @@ int main (int argc, char *argv[]) {
 	g_exit_prog = true;
     delete[] atm_ctx;
     delete[] atm_thr;
+    delete[] bank;
     return 0;
 }

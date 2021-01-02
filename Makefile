@@ -1,20 +1,17 @@
-# Makefile for the smash program
 CC = g++
-CPPFLAGS = -std=c++11 -Wall -Werror -pedantic-errors -DNDEBUG -pthread
+CXXFLAGS =  -std=c++11 -Wall -Werror -pedantic-errors -DNDEBUG 
 CCLINK = $(CC)
-OBJS = bank.o atm.o bank_data.o
+OBJS = bank_data.o atm.o bank.o 
 RM = rm -f
 TARGET = Bank
 # Creating the  executable
-Bank: $(OBJS)
-	$(CCLINK) -o Bank $(OBJS)
+$(TARGET): $(OBJS)
+	$(CCLINK) -o $(TARGET) $(OBJS) -pthread  
 # Creating the object files
-bank.o: bank.cpp atm.h bank_data.h 
-atm.o: atm.cpp atm.h bank_data.h
-bank_data.o : bank_data.cpp bank_data.h 
+bank_data.o: bank_data.cpp bank_data.h
+atm.o: atm.cpp atm.h
+bank.o: bank.cpp  atm.h bank_data.h
 # Cleaning old files before new make
+.PHONY: clean
 clean:
 	$(RM) $(TARGET) $(OBJS) *.o *~ "#"* core.* *.gch
-
-	
-

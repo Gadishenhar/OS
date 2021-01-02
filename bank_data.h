@@ -8,6 +8,7 @@
 #include <vector>
 #include <semaphore.h>
 #include <mutex>
+#include <fstream>
 #include <condition_variable>
 
 using namespace std;
@@ -26,6 +27,10 @@ class Account {
 		 * @brief create an Account
 		 */
 		Account(int id_, int remainder_, int password_);
+		/**
+		 * @brief create an Account with 0 inputs
+		 */
+		Account();
 		/**
 		 * @brief destroy an Account
 		 */
@@ -78,7 +83,6 @@ class Account {
 
 // ============= operators overloading =======
 
-		bool operator==(const Account& rhs);
 
 		bool operator< (const Account &other) const;
 
@@ -134,7 +138,7 @@ class Bank {
 		 * returns 1 for failure if account doesn't exist and writes to log
 		 * Note: mutex handling is inside for access to account list
 		 */
-		int get_account(int id, int atm_id, Account* acc);
+		int get_account(int id, int atm_id, Account& acc);
 
 		// TODO: do we need it?
 		void remove_account(int id, int atm_id);

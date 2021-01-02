@@ -45,7 +45,8 @@ int Account::check_password(int pass) {
 		return -1;
 	}
 }
- int Account::get_id() const {
+
+int Account::get_id() const {
 	return id;
 }
 
@@ -61,9 +62,6 @@ void Account::print_account() const {
 	cout << "Account " << id <<": Balance - " << remainder << " $ , Account Password - " << password << endl;
 }
 
-bool Account::operator==(const Account& rhs) {
-	return (id == rhs.id);
-}
 
 bool Account::operator< (const Account &other) const {
 	return (id < other.id);
@@ -118,12 +116,12 @@ void Bank::take_commision() {
 	Access_account_vec(false);
 
 	for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
-		*it->Access_account(true);
-		int id = *it->get_id();
-		int remainder = *it->get_remainder();
+		it->Access_account(true);
+		int id = it->get_id();
+		int remainder = it->get_remainder();
 		int bank_profit = double(com * remainder) / 100;
-		*it->withdrawal(bank_profit);
-		*it->Release_account(true);
+		it->withdrawal(bank_profit);
+		it->Release_account(true);
 
 		bank_account.Access_account(true);
 		bank_account.add_to_balance(bank_profit);
@@ -149,9 +147,9 @@ void Bank::print_accounts() {
 	cout << "Current Bank Status" << endl;
 
 	for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
-		*it->Access_account(false);
-		*it->print_account();
-		*it->Release_account(false);
+		it->Access_account(false);
+		it->print_account();
+		it->Release_account(false);
 
 	}
 
@@ -168,10 +166,15 @@ void Bank::print_accounts() {
 
 // DONE: locks
 void Bank::add_account(int id, int remainder, int atm_id, int password) {
-
+	vector<Account>::iterator it;
 	Access_account_vec(true);
 	sleep(1);
-	if (find(accounts.begin(), accounts.end(), id) != accounts.end()) {
+	for (it = accounts.begin(); it != accounts.end(); ++it) {
+		if (it->get_id() == id) {
+			break;
+		}
+	}
+	if (it != accounts.end()) {
 		accounts.push_back(Account(id, remainder, password));
 		Access_log_file();
 		log_file << atm_id << ": New account id is " << id << " with password " << password << " and initial balance " << remainder << endl;
@@ -189,10 +192,10 @@ void Bank::add_account(int id, int remainder, int atm_id, int password) {
 int Bank::withdrawal(int id, int password, int amount, int atm_id) {
 
 	int rc = 0;
-	Account acc;
+	Account acc(0,0,0);
 
 	Access_account_vec(false);
-	rc = get_account(id, atm_id, &acc);
+	rc = get_account(id, atm_id, acc);
 	if(rc) {
 		sleep(1);
 		Release_account_vec(false);
@@ -233,23 +236,33 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id) {
 }
 
 // DONE: locks
-int Bank::get_account(int id, int atm_id, Account* acc) {
+int Bank::get_account(int id, int atm_id, Account& acc) {
 	//No use in access_account_vec on purpose - we will do it in the envlope functions
-	vector<Account>::iterator it = find_if(accounts.begin(), accounts.end(), [](const Account& account) { return account.get_id() == id; });
-	if (it == accounts.end()) {
-		Access_log_file();
-		log_file << "Error << " << atm_id << ": Your  transaction failed - account id " << id << " does not exist" << endl; // TODO: is it to log or stdout
-		Release_log_file();
-		*acc = nullptr;
-		return -1;
+	for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
+		if (it->get_id() == id) {
+			acc = *it;
+			return 0;
+		}
 	}
-	*acc = *it;
+	Access_log_file();
+	log_file << "Error << " << atm_id << ": Your  transaction failed - account id " << id << " does not exist" << endl; // TODO: is it to log or stdout
+	Release_log_file();
+	return -1;
+
+
 	return 0;
 }
 
 void Bank::remove_account(int id, int atm_id) {
+	Account acc(0,0,0);
+	vector<Account>::iterator it;
 	Access_account_vec(true);
-	vector<Account>::iterator it = find_if(accounts.begin(), accounts.end(), [](const Account& account) { return account.get_id() == id; });
+	for (it = accounts.begin(); it != accounts.end(); ++it) {
+		if (it->get_id() == id) {
+			acc = *it;
+			break;
+		}
+	}
 	if (it == accounts.end()) {
 		sleep(1);
 		Access_log_file();
@@ -258,19 +271,18 @@ void Bank::remove_account(int id, int atm_id) {
 		Release_account_vec(true);
 		return;
 	}
-	*it->Access_account(false);
+	it->Access_account(false);
 	sleep(1);
-	int curr_balance = *it->get_remainder();
-	*it->Release_account(false);
+	it->Release_account(false);
 	accounts.erase(it);
 	Release_account_vec(true);
 }
 
 void Bank::get_account_balance(int id, int password, int atm_id) {
 
-	Account acc;
+	Account acc(0,0,0);
 	Access_account_vec(false);
-	int rc = get_account(id, atm_id, &acc);
+	int rc = get_account(id, atm_id, acc);
 	if (rc) {
 		sleep(1);
 		Release_account_vec(false);
@@ -300,17 +312,17 @@ void Bank::get_account_balance(int id, int password, int atm_id) {
 // DONE:check if we need to write to log only if the first id doesn't exist or both of them : we need to print once only
 //DONE: locks
 void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id) {
-	Account src_account;
-	Account dst_account;
+	Account src_account(0,0,0);
+	Account dst_account(0,0,0);
 
 	Access_account_vec(false);
-	int rc_src = get_account(src_id, atm_id, &src_account);
+	int rc_src = get_account(src_id, atm_id, src_account);
 	if (rc_src) {
 		sleep(1);
 		Release_account_vec(false);
 		return;
 	}
-	int rc_dst = get_account(dst_id, atm_id, &dst_account);
+	int rc_dst = get_account(dst_id, atm_id, dst_account);
 	if (rc_dst) {
 		sleep(1);
 		Release_account_vec(false);
@@ -335,16 +347,17 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 	Release_account_vec(false);
 
 	Access_log_file();
-	log_file << atm_id << ": Transfer " << amount << " from account " << src_id << " to account " << dst_id <<
-			" new account balance is " << src_balance << " new target account balance is " << dst_account << endl;
+	log_file << atm_id << ": Transfer " << amount << " from account " << src_id << " to account "
+			<< dst_id <<" new account balance is " << src_balance << " new target account balance is " << dst_balance << endl;
+
 	Release_log_file();
 
 }
 
 // DONE: locks
 void Bank::deposit(int id, int password, int amount, int atm_id) {
-	Account acc;
-	int rc = get_account(id, atm_id, &acc);
+	Account acc(0,0,0);
+	int rc = get_account(id, atm_id, acc);
 	if (rc < 0 ) {
 		return;
 	}
