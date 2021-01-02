@@ -79,6 +79,7 @@ void* atm (void* ctx)
 		const char* delimiters = " \t\n";
 		int i = 0, num_arg = 0;
 
+		printf("cmd is :%s\n", cmd.c_str());
 		linesize = new char [cmd.length() + 1];
 		strcpy(linesize, cmd.c_str());
 		cmd = strtok(linesize, delimiters);
@@ -91,7 +92,10 @@ void* atm (void* ctx)
 				num_arg++;
 			}
 		}
-
+		printf("OP is :%s\n", cmd.c_str());
+		printf("num args is :%d\n",num_arg);
+		printf("args[0] is :%s\n",args[0]);
+		printf("args[1] is :%s\n",args[1]);
 		rc = check_input(cmd, num_arg, args);
 		CHECK_RC(rc);
 

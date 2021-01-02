@@ -88,7 +88,7 @@ void Account::Release_account(bool is_write) {
 		sem_wait(&s_read_acc);
 		readers_acc--;
 		if (!readers_acc)
-			sem_post(&s_read_acc);
+			sem_post(&s_write_acc);
 		sem_post(&s_read_acc);
 	}
 }
@@ -399,7 +399,7 @@ void Bank::Release_account_vec(bool is_write) {
 	else {
 		sem_wait(&s_readers);
 		readers--;
-		if (!readers)
+		if (readers == 0)
 			sem_post(&s_writers);
 		sem_post(&s_readers);
 	}
