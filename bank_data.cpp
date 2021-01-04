@@ -27,7 +27,7 @@ int Account::withdrawal(int amount) {
 	if (amount > remainder) {
 		return -1;
 	} else {
-		remainder -= amount;
+		this->remainder = this->remainder - amount;
 		return 0;
 	}
 }
@@ -35,7 +35,7 @@ int Account::withdrawal(int amount) {
 
 
 void Account::add_to_balance(int amount) {
-	remainder += amount;
+	this->remainder = this->remainder + amount;
 }
 
 
