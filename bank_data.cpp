@@ -381,8 +381,8 @@ void Bank::deposit(int id, int password, int amount, int atm_id) {
 	}
 
 	acc.Access_account(true);
-	acc.add_to_balance(amount);
 	int curr_balance = acc.get_remainder();
+	acc.add_to_balance(amount);
 	acc.Release_account(true);
 
 	Access_log_file();
