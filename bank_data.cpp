@@ -129,7 +129,7 @@ void Bank::take_commision() {
 		bank_account.Release_account(true);
         int remainder_after = it->get_remainder();
 
-        log_file << "remainder before commission: " << remainder << " remainder after commission: " << remainder_after << endl;
+        log_file << "account: " << id << " remainder before commission: " << remainder << " remainder after commission: " << remainder_after << endl;
 
         Access_log_file();
 		log_file << "Bank comissions of " << com << " % were charged, the bank gained " << bank_profit <<" $ from account " << id << endl;
