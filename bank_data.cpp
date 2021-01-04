@@ -228,7 +228,7 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id) {
 	Release_account_vec(false);
 
 	Access_log_file();
-	log_file << atm_id << " account " << id <<" new balance is " << curr_balance << "after "<< amount << " $ was withdrew" << endl;
+	log_file << atm_id << ": account " << id <<" new balance is " << curr_balance << " after "<< amount << " $ was withdrew" << endl;
 	Release_log_file();
 
 	return 0;
