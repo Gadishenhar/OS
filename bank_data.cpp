@@ -228,7 +228,7 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id) {
 	Release_account_vec(false);
 
 	Access_log_file();
-	log_file << atm_id << "account " << id <<" new balance is " << curr_balance << "after "<< amount << " $ was withdrew" << endl;
+	log_file << atm_id << " account " << id <<" new balance is " << curr_balance << "after "<< amount << " $ was withdrew" << endl;
 	Release_log_file();
 
 	return 0;
@@ -325,23 +325,22 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 		Release_account_vec(false);
 		return;
 	}
-	src_account.Access_account(true);
+	Release_account_vec(false);
+
+
+	// locks and sleep in this method already. BUG FIXED
 	rc_src = withdrawal(src_id, password, amount, atm_id);
-	if (rc_src) {
-		sleep(1);
-		src_account.Release_account(true);
-		Release_account_vec(false);
-		return;
-	}
+
+	src_account.Access_account(true);
 	dst_account.Access_account(true);
-	sleep(1);
+
 	dst_account.add_to_balance(amount);
 	int src_balance = src_account.get_remainder();
 	int dst_balance = dst_account.get_remainder();
 
 	dst_account.Release_account(true);
 	src_account.Release_account(true);
-	Release_account_vec(false);
+
 
 	Access_log_file();
 	log_file << atm_id << ": Transfer " << amount << " from account " << src_id << " to account "
