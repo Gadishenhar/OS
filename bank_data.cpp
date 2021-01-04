@@ -120,19 +120,16 @@ void Bank::take_commision() {
 		it->Access_account(true);
 		int id = it->get_id();
 		int remainder = it->get_remainder();
-		int bank_profit = round(double(com * double(remainder)) / 100);
+		int bank_profit = (com * remainder) / 100;
 		it->withdrawal(bank_profit);
 		it->Release_account(true);
 
 		bank_account.Access_account(true);
 		bank_account.add_to_balance(bank_profit);
 		bank_account.Release_account(true);
-        int remainder_after = it->get_remainder();
-
-        log_file << "remainder before commission: " << remainder << " remainder after commission: " << remainder_after << endl;
 
         Access_log_file();
-		log_file << "Bank comissions of " << com << " % were charged, the bank gained " << bank_profit <<" $ from account " << id << endl;
+		log_file << "Bank: comissions of " << com << " % were charged, the bank gained " << bank_profit <<" $ from account " << id << endl;
 		Release_log_file();
 	}
 
@@ -344,15 +341,28 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 		return;
 	}
 
-	src_account.Access_account(true);
-	dst_account.Access_account(true);
+	if (src_id < dst_id) {
+		src_account.Access_account(true);
+		dst_account.Access_account(true);
+	} else {
+		dst_account.Access_account(true);
+		src_account.Access_account(true);
+	}
+
 
 	dst_account.add_to_balance(amount);
 	int src_balance = src_account.get_remainder();
 	int dst_balance = dst_account.get_remainder();
 
-	dst_account.Release_account(true);
-	src_account.Release_account(true);
+	if (src_id < dst_id) {
+		dst_account.Release_account(true);
+		src_account.Release_account(true);
+	} else {
+		src_account.Release_account(true);
+		dst_account.Release_account(true);
+
+	}
+
 
 
 	Access_log_file();
@@ -381,8 +391,8 @@ void Bank::deposit(int id, int password, int amount, int atm_id) {
 	}
 
 	acc.Access_account(true);
-	int curr_balance = acc.get_remainder();
 	acc.add_to_balance(amount);
+	int curr_balance = acc.get_remainder();
 	acc.Release_account(true);
 
 	Access_log_file();
