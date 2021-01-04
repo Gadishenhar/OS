@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <math.h>
 
 #define DEBUG(...)  printf("Line %d Function %s:\n", __LINE__, __FUNCTION__ ); printf(__VA_ARGS__);
 using namespace std;
@@ -119,15 +120,18 @@ void Bank::take_commision() {
 		it->Access_account(true);
 		int id = it->get_id();
 		int remainder = it->get_remainder();
-		int bank_profit = double(com * remainder) / 100;
+		int bank_profit = round(double(com * double(remainder)) / 100);
 		it->withdrawal(bank_profit);
 		it->Release_account(true);
 
 		bank_account.Access_account(true);
 		bank_account.add_to_balance(bank_profit);
 		bank_account.Release_account(true);
+        int remainder_after = it->get_remainder();
 
-		Access_log_file();
+        log_file << "remainder before commission: " << remainder << " remainder after commission: " << remainder_after << endl;
+
+        Access_log_file();
 		log_file << "Bank comissions of " << com << " % were charged, the bank gained " << bank_profit <<" $ from account " << id << endl;
 		Release_log_file();
 	}
