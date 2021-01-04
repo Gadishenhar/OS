@@ -312,6 +312,7 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 	Account src_account(0,0,0);
 	Account dst_account(0,0,0);
 
+
 	Access_account_vec(false);
 	int rc_src = get_account(src_id, atm_id, src_account);
 	if (rc_src) {
@@ -327,6 +328,10 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 	}
 	Release_account_vec(false);
 
+	if (src_id == dst_id) {
+		// same account
+		return;
+	}
 
 	// locks and sleep in this method already. BUG FIXED
 	rc_src = withdrawal(src_id, password, amount, atm_id);
