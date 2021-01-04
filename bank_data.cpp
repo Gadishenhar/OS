@@ -336,6 +336,10 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 	// locks and sleep in this method already. BUG FIXED
 	rc_src = withdrawal(src_id, password, amount, atm_id);
 
+	if (rc_src) {
+		return;
+	}
+
 	src_account.Access_account(true);
 	dst_account.Access_account(true);
 
