@@ -120,7 +120,7 @@ void Bank::take_commision() {
 		it->Access_account(true);
 		int id = it->get_id();
 		int remainder = it->get_remainder();
-		int bank_profit = (com * remainder) / 100;
+		int bank_profit = round( double(com * remainder) / 100 );
 		it->withdrawal(bank_profit);
 		it->Release_account(true);
 
@@ -160,7 +160,7 @@ void Bank::print_accounts() {
 	int balance = bank_account.get_remainder();
 	bank_account.Release_account(false);
 
-	cout << "The Bank has " << balance << "$" << endl;
+	cout << "The Bank has " << balance << " $" << endl;
 
 
 }
@@ -174,7 +174,7 @@ void Bank::add_account(int id, int remainder, int atm_id, int password) {
 	for (it = accounts.begin(); it != accounts.end(); ++it) {
 		if (it->get_id() == id) {
 			Access_log_file();
-			log_file << "Error << "  << atm_id << ": Your  transaction failed - account with the same id exists" << endl;
+			log_file << "Error << "  << atm_id << ": Your transaction failed - account with the same id exists" << endl;
 			Release_log_file();
 			Release_account_vec(true);
 			return;
@@ -206,7 +206,7 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id) {
 	rc = acc.check_password(password);
 	if (rc) {
 		Access_log_file();
-		log_file << "Error << "  << atm_id << ": Your  transaction failed - password for account id " << id <<" is incorrect" << endl;
+		log_file << "Error << "  << atm_id << ": Your transaction failed - password for account id " << id <<" is incorrect" << endl;
 		Release_log_file();
 		acc.Release_account(true);
 		Release_account_vec(false);
@@ -217,7 +217,7 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id) {
 	acc.Release_account(true);
 	if (rc) {
 		Access_log_file();
-		log_file << "Error << "  << atm_id << ": Your  transaction failed - account id " << id <<" balance is lower than " << amount << endl;
+		log_file << "Error << "  << atm_id << ": Your transaction failed - account id " << id <<" balance is lower than " << amount << endl;
 		Release_log_file();
 		acc.Release_account(true);
 		Release_account_vec(false);
@@ -245,7 +245,7 @@ int Bank::get_account(int id, int atm_id, Account& acc) {
 		}
 	}
 	Access_log_file();
-	log_file << "Error << " << atm_id << ": Your  transaction failed - account id " << id << " does not exist" << endl; // TODO: is it to log or stdout
+	log_file << "Error << " << atm_id << ": Your transaction failed - account id " << id << " does not exist" << endl; // TODO: is it to log or stdout
 	Release_log_file();
 	return -1;
 
@@ -264,7 +264,7 @@ void Bank::remove_account(int id, int atm_id) {
 	if (it == accounts.end()) {
 		sleep(1);
 		Access_log_file();
-		log_file << "Error << " << atm_id << ": Your  transaction failed - account id " << id << " does not exist" << endl;
+		log_file << "Error << " << atm_id << ": Your transaction failed - account id " << id << " does not exist" << endl;
 		Release_log_file();
 		Release_account_vec(true);
 		return;
@@ -293,7 +293,7 @@ void Bank::get_account_balance(int id, int password, int atm_id) {
 		acc.Release_account(false);
 		Release_account_vec(false);
 		Access_log_file();
-		log_file << "Error << "  << atm_id << ": Your  transaction failed - password for account id " << id <<" is incorrect" << endl;
+		log_file << "Error << "  << atm_id << ": Your transaction failed - password for account id " << id <<" is incorrect" << endl;
 		Release_log_file();
 		return;
 	}
@@ -385,7 +385,7 @@ void Bank::deposit(int id, int password, int amount, int atm_id) {
 	acc.Release_account(false);
 	if (rc) {
 		Access_log_file();
-		log_file << "Error << "  << atm_id << ": Your  transaction failed - password for account id " << id <<" is incorrect" << endl;
+		log_file << "Error << "  << atm_id << ": Your transaction failed - password for account id " << id <<" is incorrect" << endl;
 		Release_log_file();
 		return;
 	}
