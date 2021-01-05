@@ -225,8 +225,6 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id, bool is_trans
 	}
 	int curr_balance = acc.get_remainder();
 
-
-
 	if (!is_transfer) {
 		Access_log_file();
 		log_file << atm_id << ": Account " << id << " new balance is " << curr_balance << " after " << amount << " $ was withdrew" << endl;
@@ -275,9 +273,16 @@ void Bank::remove_account(int id, int atm_id) {
 	}
 	it->Access_account(false);
 	sleep(1);
-	it->Release_account(false);
+	int curr_balance = it->get_remainder();
 	accounts.erase(it);
+
+	Access_log_file();
+	log_file << atm_id << ": Account" << id << " is now closed. Balance was " << curr_balance << endl;
+	Release_log_file();
+
+	it->Release_account(false);
 	Release_account_vec(true);
+
 }
 
 void Bank::get_account_balance(int id, int password, int atm_id) {
@@ -302,7 +307,6 @@ void Bank::get_account_balance(int id, int password, int atm_id) {
 		return;
 	}
 	int curr_balance = acc.get_remainder();
-
 
 	Access_log_file();
 	log_file << atm_id << ": Account " << id << " balance is " << curr_balance << endl;
