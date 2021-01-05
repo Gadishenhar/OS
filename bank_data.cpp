@@ -294,7 +294,7 @@ void Bank::get_account_balance(int id, int password, int atm_id) {
 		return;
 	}
 	acc->Access_account(false);
-	rc = acc->check_password(password);
+	int rc = acc->check_password(password);
 	sleep(1);
 	if (rc) {
 		acc->Release_account(false);
@@ -341,7 +341,7 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 	}
 
 	// locks and sleep in this method already. BUG FIXED
-	rc_src = withdrawal(src_id, password, amount, atm_id, true);
+	int rc_src = withdrawal(src_id, password, amount, atm_id, true);
 
 	if (rc_src) {
 		return;
@@ -387,7 +387,7 @@ void Bank::deposit(int id, int password, int amount, int atm_id) {
 		return;
 	}
 	acc->Access_account(false);
-	rc = acc->check_password(password);
+	int rc = acc->check_password(password);
 	acc->Release_account(false);
 	if (rc) {
 		Access_log_file();
