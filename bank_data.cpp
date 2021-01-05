@@ -129,7 +129,7 @@ void Bank::take_commision() {
 		bank_account.Release_account(true);
 
         Access_log_file();
-		log_file << "Bank: comissions of " << com << " % were charged, the bank gained " << bank_profit <<" $ from account " << id << endl;
+		log_file << "Bank: commissions of " << com << " % were charged, the bank gained " << bank_profit <<" $ from account " << id << endl;
 		Release_log_file();
 	}
 
@@ -229,7 +229,7 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id) {
 	Release_account_vec(false);
 
 	Access_log_file();
-	log_file << atm_id << ": account " << id <<" new balance is " << curr_balance << " after "<< amount << " $ was withdrew" << endl;
+	log_file << atm_id << ": Account " << id <<" new balance is " << curr_balance << " after "<< amount << " $ was withdrew" << endl;
 	Release_log_file();
 
 	return 0;
