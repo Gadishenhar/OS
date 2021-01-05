@@ -138,7 +138,7 @@ class Bank {
 		 * returns 1 for failure if account doesn't exist and writes to log
 		 * Note: mutex handling is inside for access to account list
 		 */
-		int get_account(int id, int atm_id, Account& acc);
+		Account* get_account(int id, int atm_id);
 
 		// TODO: do we need it?
 		void remove_account(int id, int atm_id);

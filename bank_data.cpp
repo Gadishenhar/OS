@@ -193,37 +193,35 @@ void Bank::add_account(int id, int remainder, int atm_id, int password) {
 int Bank::withdrawal(int id, int password, int amount, int atm_id, bool is_transfer=false) {
 
 	int rc = 0;
-	Account acc(0,0,0);
-
 	Access_account_vec(false);
-	rc = get_account(id, atm_id, acc);
-	if(rc) {
+	Account* acc = get_account(id, atm_id);
+	if(acc == NULL) {
 		sleep(1);
 		Release_account_vec(false);
 		return -1;
 	}
-	acc.Access_account(true);
+	acc->Access_account(true);
 	sleep(1);
-	rc = acc.check_password(password);
+	rc = acc->check_password(password);
 	if (rc) {
 		Access_log_file();
 		log_file << "Error "  << atm_id << ": Your transaction failed - password for account id " << id <<" is incorrect" << endl;
 		Release_log_file();
-		acc.Release_account(true);
+		acc->Release_account(true);
 		Release_account_vec(false);
 		return -1;
 	}
 
-	rc = acc.withdrawal(amount);
+	rc = acc->withdrawal(amount);
 	if (rc) {
 		Access_log_file();
 		log_file << "Error "  << atm_id << ": Your transaction failed - account id " << id <<" balance is lower than " << amount << endl;
 		Release_log_file();
-		acc.Release_account(true);
+		acc->Release_account(true);
 		Release_account_vec(false);
 		return -1;
 	}
-	int curr_balance = acc.get_remainder();
+	int curr_balance = acc->get_remainder();
 
 	if (!is_transfer) {
 		Access_log_file();
@@ -231,25 +229,26 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id, bool is_trans
 		Release_log_file();
 	}
 
-	acc.Release_account(true);
+	acc->Release_account(true);
 	Release_account_vec(false);
 
 	return 0;
 }
 
 // DONE: locks
-int Bank::get_account(int id, int atm_id, Account& acc) {
+Account* Bank::get_account(int id, int atm_id) {
 	//No use in access_account_vec on purpose - we will do it in the envlope functions
+	Account* acc;
 	for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
 		if (it->get_id() == id) {
-			acc = *it;
-			return 0;
+			acc = &(*it);
+			return acc;
 		}
 	}
 	Access_log_file();
 	log_file << "Error " << atm_id << ": Your transaction failed - account id " << id << " does not exist" << endl; // TODO: is it to log or stdout
 	Release_log_file();
-	return -1;
+	return NULL;
 
 }
 
@@ -287,32 +286,31 @@ void Bank::remove_account(int id, int atm_id) {
 
 void Bank::get_account_balance(int id, int password, int atm_id) {
 
-	Account acc(0,0,0);
 	Access_account_vec(false);
-	int rc = get_account(id, atm_id, acc);
-	if (rc) {
+	Account* acc = get_account(id, atm_id);
+	if (acc == NULL) {
 		sleep(1);
 		Release_account_vec(false);
 		return;
 	}
-	acc.Access_account(false);
-	rc = acc.check_password(password);
+	acc->Access_account(false);
+	rc = acc->check_password(password);
 	sleep(1);
 	if (rc) {
-		acc.Release_account(false);
+		acc->Release_account(false);
 		Release_account_vec(false);
 		Access_log_file();
 		log_file << "Error "  << atm_id << ": Your transaction failed - password for account id " << id <<" is incorrect" << endl;
 		Release_log_file();
 		return;
 	}
-	int curr_balance = acc.get_remainder();
+	int curr_balance = acc->get_remainder();
 
 	Access_log_file();
 	log_file << atm_id << ": Account " << id << " balance is " << curr_balance << endl;
 	Release_log_file();
 	
-	acc.Release_account(false);
+	acc->Release_account(false);
 	Release_account_vec(false);
 
 }
@@ -321,19 +319,16 @@ void Bank::get_account_balance(int id, int password, int atm_id) {
 // DONE:check if we need to write to log only if the first id doesn't exist or both of them : we need to print once only
 //DONE: locks
 void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id) {
-	Account src_account(0,0,0);
-	Account dst_account(0,0,0);
-
 
 	Access_account_vec(false);
-	int rc_src = get_account(src_id, atm_id, src_account);
-	if (rc_src) {
+	Account* src_account = get_account(src_id, atm_id);
+	if (src_account == NULL) {
 		sleep(1);
 		Release_account_vec(false);
 		return;
 	}
-	int rc_dst = get_account(dst_id, atm_id, dst_account);
-	if (rc_dst) {
+	Account* dst_account = get_account(dst_id, atm_id);
+	if (dst_account == NULL) {
 		sleep(1);
 		Release_account_vec(false);
 		return;
@@ -353,17 +348,17 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 	}
 
 	if (src_id < dst_id) {
-		src_account.Access_account(true);
-		dst_account.Access_account(true);
+		src_account->Access_account(true);
+		dst_account->Access_account(true);
 	} else {
-		dst_account.Access_account(true);
-		src_account.Access_account(true);
+		dst_account->Access_account(true);
+		src_account->Access_account(true);
 	}
 
 
-	dst_account.add_to_balance(amount);
-	int src_balance = src_account.get_remainder();
-	int dst_balance = dst_account.get_remainder();
+	dst_account->add_to_balance(amount);
+	int src_balance = src_account->get_remainder();
+	int dst_balance = dst_account->get_remainder();
 
 
 	Access_log_file();
@@ -373,12 +368,12 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 	Release_log_file();
 
 	if (src_id < dst_id) {
-		dst_account.Release_account(true);
-		src_account.Release_account(true);
+		dst_account->Release_account(true);
+		src_account->Release_account(true);
 	}
 	else {
-		src_account.Release_account(true);
-		dst_account.Release_account(true);
+		src_account->Release_account(true);
+		dst_account->Release_account(true);
 
 	}
 
@@ -386,14 +381,14 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 
 // DONE: locks
 void Bank::deposit(int id, int password, int amount, int atm_id) {
-	Account acc(0,0,0);
-	int rc = get_account(id, atm_id, acc);
-	if (rc < 0 ) {
+	
+	Account* acc = get_account(id, atm_id);
+	if ( acc == NULL ) {
 		return;
 	}
-	acc.Access_account(false);
-	rc = acc.check_password(password);
-	acc.Release_account(false);
+	acc->Access_account(false);
+	rc = acc->check_password(password);
+	acc->Release_account(false);
 	if (rc) {
 		Access_log_file();
 		log_file << "Error "  << atm_id << ": Your transaction failed - password for account id " << id <<" is incorrect" << endl;
@@ -401,14 +396,14 @@ void Bank::deposit(int id, int password, int amount, int atm_id) {
 		return;
 	}
 
-	acc.Access_account(true);
-	acc.add_to_balance(amount);
-	int curr_balance = acc.get_remainder();
+	acc->Access_account(true);
+	acc->add_to_balance(amount);
+	int curr_balance = acc->get_remainder();
 
 	Access_log_file();
 	log_file << atm_id << ": Account " << id << " new balance is " << curr_balance << " after " << amount << " $ was deposited" << endl;
 	Release_log_file();
-	acc.Release_account(true);
+	acc->Release_account(true);
 
 }
 
