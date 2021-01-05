@@ -117,56 +117,52 @@ void Bank::take_commision() {
 	Access_account_vec(false);
 
 	for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
-		Release_account_vec(false);
-		it->Access_account(true);
 		int id = it->get_id();
 		int remainder = it->get_remainder();
 		int bank_profit = round( double(com * remainder) / 100 );
 		it->withdrawal(bank_profit);
-		
+		it->Release_account(true);
 
 		bank_account.Access_account(true);
 		bank_account.add_to_balance(bank_profit);
 		bank_account.Release_account(true);
 
-		
+
         Access_log_file();
 		log_file << "Bank: commissions of " << com << " % were charged, the bank gained " << bank_profit <<" $ from account " << id << endl;
 		Release_log_file();
-		it->Release_account(true);
-		Access_account_vec(false);
+
+
 	}
 
-	
 	Release_account_vec(false);
 }
 
 // DONE: locks
 void Bank::print_accounts() {
 
-	Access_account_vec(false);
-
+	Access_account_vec(true);
 	sort(accounts.begin(), accounts.end());
+	Release_account_vec(true);
 
 	printf("\033[2J");
 	printf("\033[1;1H");
 	cout << "Current Bank Status" << endl;
+	Access_account_vec(false);
 
 	for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
-		Release_account_vec(false);
 		it->Access_account(false);
 		it->print_account();
 		it->Release_account(false);
-		Access_account_vec(false);
 	}
 
 	Release_account_vec(false);
-
 	bank_account.Access_account(false);
 	int balance = bank_account.get_remainder();
 	bank_account.Release_account(false);
 
 	cout << "The Bank has " << balance << " $" << endl;
+
 
 
 }
