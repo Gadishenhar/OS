@@ -20,7 +20,8 @@ Account::Account(int id_, int remainder_, int password_): id(id_), remainder(rem
 }
 
 Account::~Account() {
-
+	sem_destroy(&s_read_acc);
+	sem_destroy(&s_write_acc);
 }
 
 int Account::withdrawal(int amount) {
@@ -266,37 +267,43 @@ Account* Bank::get_account(int id, int atm_id) {
 
 }
 
-void Bank::remove_account(int id, int atm_id) {
-	Account acc(0,0,0);
-	vector<Account>::iterator it;
+void Bank::remove_account(int id, int password, int atm_id) {
+
+	vector<Account>::iterator acc;
 	Access_account_vec(true);
-	for (it = accounts.begin(); it != accounts.end(); ++it) {
-		if (it->get_id() == id) {
-			acc = *it;
-			break;
-		}
-	}
-	if (it == accounts.end()) {
-		sleep(1);
+	for (acc = accounts.begin(); acc != accounts.end(); ++acc) {
 		Release_account_vec(true);
+		if (acc->get_id() == id) {
+			
+			int rc = acc->check_password(password);
+			if (rc) {
+				acc->Release_account(false);
+				Release_account_vec(false);
+				Access_log_file();
+				log_file << "Error " << atm_id << ": Your transaction failed - password for account id " << id << " is incorrect" << endl;
+				Release_log_file();
+				return;
+			}
+			
+			it->Access_account(false);
+			sleep(1);
+			int curr_balance = acc->get_remainder();
+			it->Release_account(false);
+			accounts.erase(acc);
+			Release_account_vec(true);
 
-		Access_log_file();
-		log_file << "Error " << atm_id << ": Your transaction failed - account id " << id << " does not exist" << endl;
-		Release_log_file();
-		return;
+			Access_log_file();
+			log_file << atm_id << ": Account" << id << " is now closed. Balance was " << curr_balance << endl;
+			Release_log_file();
+		}
+		Access_account_vec(true);
 	}
-	it->Access_account(false);
-	sleep(1);
-	int curr_balance = it->get_remainder();
-	accounts.erase(it);
 
-	it->Release_account(false);
 	Release_account_vec(true);
 
 	Access_log_file();
-	log_file << atm_id << ": Account" << id << " is now closed. Balance was " << curr_balance << endl;
+	log_file << "Error " << atm_id << ": Your transaction failed - account id " << id << " does not exist" << endl;
 	Release_log_file();
-
 
 }
 
