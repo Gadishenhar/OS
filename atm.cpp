@@ -45,7 +45,7 @@ void* atm (void* ctx)
 			bank->deposit(id, password, amount, atm_id);
 		} else if (args[0] == "W") {
 			int amount = atoi(args[3].c_str());
-			bank->withdrawal(id, password, amount, atm_id);
+			bank->withdrawal(id, password, amount, atm_id, false);
 		} else if (args[0] == "B") {
 			bank->get_account_balance(id, password, atm_id);
 		} else if (args[0] == "Q") {
