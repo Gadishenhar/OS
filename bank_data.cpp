@@ -174,10 +174,11 @@ void Bank::add_account(int id, int remainder, int atm_id, int password) {
 
 	for (it = accounts.begin(); it != accounts.end(); ++it) {
 		if (it->get_id() == id) {
+			Release_account_vec(true);
+
 			Access_log_file();
 			log_file << "Error "  << atm_id << ": Your transaction failed - account with the same id exists" << endl;
 			Release_log_file();
-			Release_account_vec(true);
 			return;
 		}
 	}
@@ -206,21 +207,25 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id, bool is_trans
 	sleep(1);
 	rc = acc->check_password(password);
 	if (rc) {
+		acc->Release_account(true);
+		Release_account_vec(false);
+
 		Access_log_file();
 		log_file << "Error "  << atm_id << ": Your transaction failed - password for account id " << id <<" is incorrect" << endl;
 		Release_log_file();
-		acc->Release_account(true);
-		Release_account_vec(false);
+
 		return -1;
 	}
 
 	rc = acc->withdrawal(amount);
 	if (rc) {
+		acc->Release_account(true);
+		Release_account_vec(false);
+
 		Access_log_file();
 		log_file << "Error "  << atm_id << ": Your transaction failed - account id " << id <<" balance is lower than " << amount << endl;
 		Release_log_file();
-		acc->Release_account(true);
-		Release_account_vec(false);
+
 		return -1;
 	}
 	int curr_balance = acc->get_remainder();
@@ -268,10 +273,11 @@ void Bank::remove_account(int id, int atm_id) {
 	}
 	if (it == accounts.end()) {
 		sleep(1);
+		Release_account_vec(true);
+
 		Access_log_file();
 		log_file << "Error " << atm_id << ": Your transaction failed - account id " << id << " does not exist" << endl;
 		Release_log_file();
-		Release_account_vec(true);
 		return;
 	}
 	it->Access_account(false);
