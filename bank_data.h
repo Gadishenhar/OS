@@ -141,7 +141,7 @@ class Bank {
 		Account* get_account(int id, int atm_id);
 
 		// TODO: do we need it?
-		void remove_account(int id, int atm_id);
+		void remove_account(int id, int password, int atm_id);
 
 		/**
 		 * @brief add to the balance of a specific account in the account list

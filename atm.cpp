@@ -49,7 +49,7 @@ void* atm (void* ctx)
 		} else if (args[0] == "B") {
 			bank->get_account_balance(id, password, atm_id);
 		} else if (args[0] == "Q") {
-			bank->remove_account(id, atm_id);
+			bank->remove_account(id, password, atm_id);
 		} else if (args[0] == "T") {
 			int dst_id = atoi(args[3].c_str());
 			int amount = atoi(args[4].c_str());
