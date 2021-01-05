@@ -274,13 +274,13 @@ void Bank::remove_account(int id, int atm_id) {
 	it->Access_account(false);
 	sleep(1);
 	int curr_balance = it->get_remainder();
-	accounts.erase(it);
+
 
 	Access_log_file();
 	log_file << atm_id << ": Account" << id << " is now closed. Balance was " << curr_balance << endl;
 	Release_log_file();
-
 	it->Release_account(false);
+	accounts.erase(it);
 	Release_account_vec(true);
 
 }
@@ -387,28 +387,32 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 // DONE: locks
 void Bank::deposit(int id, int password, int amount, int atm_id) {
 	Account acc(0,0,0);
+
+	Access_account_vec(false);
 	int rc = get_account(id, atm_id, acc);
 	if (rc < 0 ) {
 		return;
 	}
+
 	acc.Access_account(false);
 	rc = acc.check_password(password);
-	acc.Release_account(false);
 	if (rc) {
+		sleep(1);
 		Access_log_file();
 		log_file << "Error "  << atm_id << ": Your transaction failed - password for account id " << id <<" is incorrect" << endl;
 		Release_log_file();
+		acc.Release_account(false);
 		return;
 	}
 
-	acc.Access_account(true);
 	acc.add_to_balance(amount);
 	int curr_balance = acc.get_remainder();
-
+	sleep(1);
 	Access_log_file();
 	log_file << atm_id << ": Account " << id << " new balance is " << curr_balance << " after " << amount << " $ was deposited" << endl;
 	Release_log_file();
 	acc.Release_account(true);
+	Release_account_vec(false);
 
 }
 
