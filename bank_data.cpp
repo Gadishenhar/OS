@@ -214,7 +214,6 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id) {
 	}
 
 	rc = acc.withdrawal(amount);
-	acc.Release_account(true);
 	if (rc) {
 		Access_log_file();
 		log_file << "Error "  << atm_id << ": Your transaction failed - account id " << id <<" balance is lower than " << amount << endl;
