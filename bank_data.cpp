@@ -182,10 +182,12 @@ void Bank::add_account(int id, int remainder, int atm_id, int password) {
 		}
 	}
 	accounts.push_back(Account(id, remainder, password));
+	Release_account_vec(true);
+
 	Access_log_file();
 	log_file << atm_id << ": New account id is " << id << " with password " << password << " and initial balance " << remainder << endl;
 	Release_log_file();
-	Release_account_vec(true);
+
 
 }
 
@@ -223,14 +225,16 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id, bool is_trans
 	}
 	int curr_balance = acc->get_remainder();
 
+	acc->Release_account(true);
+	Release_account_vec(false);
+
 	if (!is_transfer) {
 		Access_log_file();
 		log_file << atm_id << ": Account " << id << " new balance is " << curr_balance << " after " << amount << " $ was withdrew" << endl;
 		Release_log_file();
 	}
 
-	acc->Release_account(true);
-	Release_account_vec(false);
+
 
 	return 0;
 }
@@ -275,12 +279,13 @@ void Bank::remove_account(int id, int atm_id) {
 	int curr_balance = it->get_remainder();
 	accounts.erase(it);
 
+	it->Release_account(false);
+	Release_account_vec(true);
+
 	Access_log_file();
 	log_file << atm_id << ": Account" << id << " is now closed. Balance was " << curr_balance << endl;
 	Release_log_file();
 
-	it->Release_account(false);
-	Release_account_vec(true);
 
 }
 
@@ -306,12 +311,14 @@ void Bank::get_account_balance(int id, int password, int atm_id) {
 	}
 	int curr_balance = acc->get_remainder();
 
+	acc->Release_account(false);
+	Release_account_vec(false);
+
 	Access_log_file();
 	log_file << atm_id << ": Account " << id << " balance is " << curr_balance << endl;
 	Release_log_file();
 	
-	acc->Release_account(false);
-	Release_account_vec(false);
+
 
 }
 
@@ -360,13 +367,6 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 	int src_balance = src_account->get_remainder();
 	int dst_balance = dst_account->get_remainder();
 
-
-	Access_log_file();
-	log_file << atm_id << ": Transfer " << amount << " from account " << src_id << " to account "
-			<< dst_id <<" new account balance is " << src_balance << " new target account balance is " << dst_balance << endl;
-
-	Release_log_file();
-
 	if (src_id < dst_id) {
 		dst_account->Release_account(true);
 		src_account->Release_account(true);
@@ -376,6 +376,14 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 		dst_account->Release_account(true);
 
 	}
+
+	Access_log_file();
+	log_file << atm_id << ": Transfer " << amount << " from account " << src_id << " to account "
+			<< dst_id <<" new account balance is " << src_balance << " new target account balance is " << dst_balance << endl;
+
+	Release_log_file();
+
+
 
 }
 
@@ -400,10 +408,12 @@ void Bank::deposit(int id, int password, int amount, int atm_id) {
 	acc->add_to_balance(amount);
 	int curr_balance = acc->get_remainder();
 
+	acc->Release_account(true);
+
 	Access_log_file();
 	log_file << atm_id << ": Account " << id << " new balance is " << curr_balance << " after " << amount << " $ was deposited" << endl;
 	Release_log_file();
-	acc->Release_account(true);
+	
 
 }
 
