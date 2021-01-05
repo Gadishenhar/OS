@@ -273,6 +273,7 @@ void Bank::remove_account(int id, int password, int atm_id) {
 	Access_account_vec(true);
 	for (acc = accounts.begin(); acc != accounts.end(); ++acc) {
 		Release_account_vec(true);
+		acc->Access_account(false);
 		if (acc->get_id() == id) {
 			
 			int rc = acc->check_password(password);
@@ -285,7 +286,6 @@ void Bank::remove_account(int id, int password, int atm_id) {
 				return;
 			}
 			
-			acc->Access_account(false);
 			sleep(1);
 			int curr_balance = acc->get_remainder();
 			acc->Release_account(false);
