@@ -122,8 +122,7 @@ void Bank::take_commision() {
 		int remainder = it->get_remainder();
 		int bank_profit = round( double(com * remainder) / 100 );
 		it->withdrawal(bank_profit);
-		it->Release_account(true);
-
+		
 		bank_account.Access_account(true);
 		bank_account.add_to_balance(bank_profit);
 		bank_account.Release_account(true);
@@ -131,8 +130,10 @@ void Bank::take_commision() {
         Access_log_file();
 		log_file << "Bank: commissions of " << com << " % were charged, the bank gained " << bank_profit <<" $ from account " << id << endl;
 		Release_log_file();
+		it->Release_account(true);
 	}
 
+	
 	Release_account_vec(false);
 }
 
@@ -189,7 +190,7 @@ void Bank::add_account(int id, int remainder, int atm_id, int password) {
 }
 
 // DONE: locks
-int Bank::withdrawal(int id, int password, int amount, int atm_id) {
+int Bank::withdrawal(int id, int password, int amount, int atm_id, bool is_transfer=false) {
 
 	int rc = 0;
 	Account acc(0,0,0);
@@ -224,12 +225,16 @@ int Bank::withdrawal(int id, int password, int amount, int atm_id) {
 	}
 	int curr_balance = acc.get_remainder();
 
+
+
+	if (!is_transfer) {
+		Access_log_file();
+		log_file << atm_id << ": Account " << id << " new balance is " << curr_balance << " after " << amount << " $ was withdrew" << endl;
+		Release_log_file();
+	}
+
 	acc.Release_account(true);
 	Release_account_vec(false);
-
-	Access_log_file();
-	log_file << atm_id << ": Account " << id <<" new balance is " << curr_balance << " after "<< amount << " $ was withdrew" << endl;
-	Release_log_file();
 
 	return 0;
 }
@@ -298,13 +303,16 @@ void Bank::get_account_balance(int id, int password, int atm_id) {
 	}
 	int curr_balance = acc.get_remainder();
 
-	acc.Release_account(false);
-	Release_account_vec(false);
 
 	Access_log_file();
 	log_file << atm_id << ": Account " << id << " balance is " << curr_balance << endl;
 	Release_log_file();
+	
+	acc.Release_account(false);
+	Release_account_vec(false);
+
 }
+
 
 // DONE:check if we need to write to log only if the first id doesn't exist or both of them : we need to print once only
 //DONE: locks
@@ -334,7 +342,7 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 	}
 
 	// locks and sleep in this method already. BUG FIXED
-	rc_src = withdrawal(src_id, password, amount, atm_id);
+	rc_src = withdrawal(src_id, password, amount, atm_id, true);
 
 	if (rc_src) {
 		return;
@@ -353,22 +361,22 @@ void Bank::transfer(int src_id, int dst_id, int password, int amount, int atm_id
 	int src_balance = src_account.get_remainder();
 	int dst_balance = dst_account.get_remainder();
 
-	if (src_id < dst_id) {
-		dst_account.Release_account(true);
-		src_account.Release_account(true);
-	} else {
-		src_account.Release_account(true);
-		dst_account.Release_account(true);
-
-	}
-
-
 
 	Access_log_file();
 	log_file << atm_id << ": Transfer " << amount << " from account " << src_id << " to account "
 			<< dst_id <<" new account balance is " << src_balance << " new target account balance is " << dst_balance << endl;
 
 	Release_log_file();
+
+	if (src_id < dst_id) {
+		dst_account.Release_account(true);
+		src_account.Release_account(true);
+	}
+	else {
+		src_account.Release_account(true);
+		dst_account.Release_account(true);
+
+	}
 
 }
 
@@ -392,11 +400,11 @@ void Bank::deposit(int id, int password, int amount, int atm_id) {
 	acc.Access_account(true);
 	acc.add_to_balance(amount);
 	int curr_balance = acc.get_remainder();
-	acc.Release_account(true);
 
 	Access_log_file();
 	log_file << atm_id << ": Account " << id << " new balance is " << curr_balance << " after " << amount << " $ was deposited" << endl;
 	Release_log_file();
+	acc.Release_account(true);
 
 }
 

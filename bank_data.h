@@ -131,7 +131,7 @@ class Bank {
 		/**
 		 * @brief withdrawl money from account with given id password and a given amount
 		 */
-		int withdrawal(int id, int password, int amount, int atm_id);
+		int withdrawal(int id, int password, int amount, int atm_id, bool is_transfer);
 
 		/**
 		 * @brief get account object from the bank accounts by id
