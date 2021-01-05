@@ -117,20 +117,24 @@ void Bank::take_commision() {
 	Access_account_vec(false);
 
 	for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
+		Release_account_vec(false);
 		it->Access_account(true);
 		int id = it->get_id();
 		int remainder = it->get_remainder();
 		int bank_profit = round( double(com * remainder) / 100 );
 		it->withdrawal(bank_profit);
 		
+
 		bank_account.Access_account(true);
 		bank_account.add_to_balance(bank_profit);
 		bank_account.Release_account(true);
 
+		
         Access_log_file();
 		log_file << "Bank: commissions of " << com << " % were charged, the bank gained " << bank_profit <<" $ from account " << id << endl;
 		Release_log_file();
 		it->Release_account(true);
+		Access_account_vec(false);
 	}
 
 	
