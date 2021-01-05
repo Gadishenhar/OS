@@ -285,10 +285,10 @@ void Bank::remove_account(int id, int password, int atm_id) {
 				return;
 			}
 			
-			it->Access_account(false);
+			acc->Access_account(false);
 			sleep(1);
 			int curr_balance = acc->get_remainder();
-			it->Release_account(false);
+			acc->Release_account(false);
 			accounts.erase(acc);
 			Release_account_vec(true);
 
