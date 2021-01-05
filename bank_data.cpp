@@ -153,10 +153,11 @@ void Bank::print_accounts() {
 	cout << "Current Bank Status" << endl;
 
 	for (vector<Account>::iterator it = accounts.begin(); it != accounts.end(); ++it) {
+		Release_account_vec(false);
 		it->Access_account(false);
 		it->print_account();
 		it->Release_account(false);
-
+		Access_account_vec(false);
 	}
 
 	Release_account_vec(false);
